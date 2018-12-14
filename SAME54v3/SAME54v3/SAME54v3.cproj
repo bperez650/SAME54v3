@@ -143,13 +143,31 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="comm.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="comm.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="Device_Startup\startup_same54.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="Device_Startup\system_same54.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="lasers.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lasers.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="main.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="temp.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="temp.h">
       <SubType>compile</SubType>
     </Compile>
   </ItemGroup>

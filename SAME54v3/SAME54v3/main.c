@@ -14,7 +14,7 @@
  */ 
 
 #include "sam.h"
-#include "rtd.h"
+#include "temp.h"
 #include "comm.h"
 #include "lasers.h"
 
