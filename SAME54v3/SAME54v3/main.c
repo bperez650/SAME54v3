@@ -2,9 +2,6 @@
  * i changed double to float for temp calculation and eliminated the timer also for temp calculation
  * changed the menu, added row and deleted the '#' should not need it, so also deleted stuff in writeUart accordingly
  * changed DAC SSs might have a problem with these
- * added messgae for invalid terminal entry
- * added crap to menu
- * working on laser comm
  *
  * Must change digital to initialize all ports 
  * Must change DAC stuff for different IC 
