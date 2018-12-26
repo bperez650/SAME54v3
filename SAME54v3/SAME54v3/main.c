@@ -17,6 +17,7 @@
 #include "temp.h"
 #include "comm.h"
 #include "lasers.h"
+#include "motor.h"
 
 /* Digital IO for port control */
 #define D00 PORT_PB26
@@ -82,6 +83,9 @@ int main(void){
 	laser_key_EIC_setup ();
 	laser_key_delay_timer_setup();
  	laser_start_seq();
+	motor_port_setup();
+	motor_EIC_setup();
+	 
 	
 	/* Writes "start" to terminal upon reset */
 
@@ -92,6 +96,9 @@ int main(void){
 	
 	/* Decode the DIP switches unfinished*/
 	//DIP_switch_decode();
+	
+	/* Hone Motors */
+	motor_hone();
 
 	/* Assign pointers */
 	RTD_array_ptr = RTD_array;

@@ -3,7 +3,7 @@
 * and the USB, one day
 ****************************************************************************/
 
-////ttttttiiiy//
+////tiy//
 
 #include <sam.h>
 #include "lasers.h"
