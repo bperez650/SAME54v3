@@ -112,7 +112,8 @@ main.d main.o: .././main.c \
  C:\Program\ Files\ (x86)\Atmel\Studio\7.0\Packs\atmel\SAME54_DFP\1.0.67\include/instance/usb.h \
  C:\Program\ Files\ (x86)\Atmel\Studio\7.0\Packs\atmel\SAME54_DFP\1.0.67\include/instance/wdt.h \
  C:\Program\ Files\ (x86)\Atmel\Studio\7.0\Packs\atmel\SAME54_DFP\1.0.67\include/pio/same54p20a.h \
- .././temp.h .././comm.h .././lasers.h .././motor.h
+ .././temp.h .././comm.h .././lasers.h .././motor.h \
+ c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\arm\arm-gnu-toolchain\lib\gcc\arm-none-eabi\6.3.1\include\stdbool.h
 
 C:\Program\ Files\ (x86)\Atmel\Studio\7.0\Packs\atmel\SAME54_DFP\1.0.67\include/sam.h:
 
@@ -347,3 +348,5 @@ C:\Program\ Files\ (x86)\Atmel\Studio\7.0\Packs\atmel\SAME54_DFP\1.0.67\include/
 .././lasers.h:
 
 .././motor.h:
+
+c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\arm\arm-gnu-toolchain\lib\gcc\arm-none-eabi\6.3.1\include\stdbool.h:

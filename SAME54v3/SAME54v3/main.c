@@ -18,6 +18,7 @@
 #include "comm.h"
 #include "lasers.h"
 #include "motor.h"
+#include <stdbool.h>
 
 /* Digital IO for port control */
 #define D00 PORT_PB26
@@ -97,8 +98,6 @@ int main(void){
 	/* Decode the DIP switches unfinished*/
 	//DIP_switch_decode();
 	
-	/* Hone Motors */
-	motor_hone();
 
 	/* Assign pointers */
 	RTD_array_ptr = RTD_array;
@@ -108,6 +107,9 @@ int main(void){
 	convert_array_ptr = convert_array;
 	laser0_response_array_ptr = laser0_response_array;
 	laser1_response_array_ptr = laser1_response_array;
+	
+	/* Variables */
+	volatile bool hone_check = false; 
 	
 	/* Polling loop looking for Terminal request */
 	while(1){	
@@ -170,6 +172,17 @@ int main(void){
 				receive_count = 0;
 				receive_key = 0;
 				laser_com();
+			}
+			
+			/* Motor Aper selection */
+			else if(((*terminal_input_array_ptr == 'f') || (*terminal_input_array_ptr == 'F')) && (receive_count = 2)){
+				receive_count = 0;
+				receive_key = 0;
+				if(!hone_check){
+					motor_hone();
+					hone_check = true;
+				}
+				select_aper(*(terminal_input_array_ptr+1));
 			}
 			
 			/* Invalid Entry '?' */

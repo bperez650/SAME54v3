@@ -16,12 +16,17 @@
 void motor_state_machine(int a, int b);
 void motor_accel(void);
 void wait_motor(volatile int d);
+void motor_hone(void);
 
 /*Global variables */
 volatile bool motor_on = false;
 volatile bool catch = false;
 volatile int state;
 volatile int steps;
+volatile current_pos;
+volatile char Honing_message_Arr[] = "\nHoning\n";
+volatile char Honing_done_message_Arr[] = "Done\n";
+volatile char *Honing_message_Ptr;
 
 /* Setup ports for Motors */
 void motor_port_setup(void){
@@ -67,13 +72,16 @@ void EIC_6_Handler(void){
 *    3rd move to correct aperture (accelerating optional)    *
 *************************************************************/
 void motor_hone(void){
-	//display honing
+	Honing_message_Ptr = Honing_message_Arr;
+	write_terminal(Honing_message_Ptr);
 	motor_state_machine(1, 0x400);	//0x400 steps CW
 	motor_state_machine(2, 0x2500); 	//CCW look for picth and catch
 	if(catch){	//pitch and catch was detected
 		motor_state_machine(1, 0x96);	//0x96 steps CW to 1st aper
 	}
-	//display hone complete
+	current_pos = 1;
+	Honing_message_Ptr = Honing_done_message_Arr;
+	write_terminal(Honing_message_Ptr);
 }
 
 void motor_accel(void){
@@ -103,8 +111,8 @@ void motor_state_machine(int a, int b){
 			
 			/* CW State */
 			case 1:
-			while(count < steps){
-				porD->OUTSET.reg = EN;
+			porD->OUTSET.reg = EN;
+			while(count < (steps - 3)){
 				porD->OUTSET.reg = A;
 				porD->OUTCLR.reg = B;
 				wait_motor(i);
@@ -114,16 +122,38 @@ void motor_state_machine(int a, int b){
 				wait_motor(i);
 				porD->OUTSET.reg = A;
 				wait_motor(i);
+				count += 4;
+			}
+			if(count != steps){
+				porD->OUTSET.reg = A;
+				porD->OUTCLR.reg = B;
+				wait_motor(i);
 				count++;
 			}
+			if(count != steps){
+				porD->OUTCLR.reg = A;
+				wait_motor(i);
+				count++;
+			}
+			if(count != steps){
+				porD->OUTSET.reg = B;
+				wait_motor(i);
+				count++;
+			}
+			if(count != steps){
+				porD->OUTSET.reg = A;
+				wait_motor(i);
+				count++;
+			}
+			
 			state = 0;	//go to brake state
 			count = 0;
 			break;
 			
 			/* CCW State */
 			case 2:
-			while(count < steps){
-				porD->OUTSET.reg = EN;
+			porD->OUTSET.reg = EN;
+			while(count < (steps - 3)){
 				porD->OUTSET.reg = A;
 				porD->OUTSET.reg = B;
 				wait_motor(i);
@@ -133,20 +163,79 @@ void motor_state_machine(int a, int b){
 				wait_motor(i);
 				porD->OUTSET.reg = A;
 				wait_motor(i);
+				count += 4;
 			}
+			if(count != steps){
+				porD->OUTSET.reg = A;
+				porD->OUTSET.reg = B;
+				wait_motor(i);
+				count ++;
+			}
+			if(count != steps){
+				porD->OUTCLR.reg = A;
+				wait_motor(i);
+				count ++;
+			}
+			if(count != steps){
+				porD->OUTCLR.reg = B;
+				wait_motor(i);
+				count ++;
+			}
+			if(count != steps){
+				porD->OUTSET.reg = A;
+				wait_motor(i);
+			}
+			
 			count = 0;
 			state = 0;	//go to brake state
 			break;
 			
-			/* Acceleration State */
+			/* Acceleration CW State */
 			case 3:
-			
+			while(i >= 10){
+				
+				porD->OUTSET.reg = A;
+				porD->OUTCLR.reg = B;
+				wait_motor(i);
+				i--;
+				porD->OUTCLR.reg = A;
+				wait_motor(i);
+				i--;
+				porD->OUTSET.reg = B;
+				wait_motor(i);
+				i--;
+				porD->OUTSET.reg = A;
+				wait_motor(i);
+				i--;
+				count += 4;
+			}
+			state = 1;
 			break;
+		
+		
 			
-			/* Decceleration State */
+			/* Decceleration CW State */
 			case 4:
-			
+			while(i <= 100){
+				
+				porD->OUTSET.reg = A;
+				porD->OUTCLR.reg = B;
+				wait_motor(i);
+				i++;
+				porD->OUTCLR.reg = A;
+				wait_motor(i);
+				i++;
+				porD->OUTSET.reg = B;
+				wait_motor(i);
+				i++;
+				porD->OUTSET.reg = A;
+				wait_motor(i);	
+				i++;
+				count += 4;
+			}
+			state = 1;
 			break;
+			
 			
 			/* Idle State */
 			case 5:
@@ -162,8 +251,94 @@ void motor_state_machine(int a, int b){
 
 
 
-void select_aper(int a){
-	
+void select_aper(char aper){
+	int aper_diff;
+	switch(aper){
+		
+		case '0':
+		motor_hone();
+		break;
+		
+		case '1':
+		aper_diff = 1 - current_pos;
+		if(aper_diff == 0){
+			break;
+		}
+		if(aper_diff < 0){
+			aper_diff *= -1;
+			motor_state_machine(2, (0x340 * aper_diff));	//0x steps CCW
+		}
+		motor_state_machine(3, (0x340 * aper_diff));	//0x steps CW
+		break;
+		
+		case '2':
+		aper_diff = 2 - current_pos;
+		if(aper_diff == 0){
+			break;
+		}
+		if(aper_diff < 0){
+			aper_diff *= -1;
+			motor_state_machine(2, (0x340 * aper_diff));	//0x steps CW
+		}
+		motor_state_machine(3, (0x340 * aper_diff));	//0x steps CW	
+		current_pos = 2;	
+		break;
+		
+		case '3':
+		aper_diff = 3 - current_pos;
+		if(aper_diff == 0){
+			break;
+		}
+		if(aper_diff < 0){
+			aper_diff *= -1;
+			motor_state_machine(2, (0x340 * aper_diff));	//0x steps CW
+		}
+		motor_state_machine(3, (0x340 * aper_diff));	//0x steps CW		
+		current_pos = 3;
+		break;
+		
+		case '4':
+		aper_diff = 4 - current_pos;
+		if(aper_diff == 0){
+			break;
+		}
+		if(aper_diff < 0){
+			aper_diff *= -1;
+			motor_state_machine(2, (0x340 * aper_diff));	//0x steps CW
+		}
+		motor_state_machine(3, (0x340 * aper_diff));	//0x steps CW	
+		current_pos = 4;	
+		break;
+		
+		case '5':
+		aper_diff = 5 - current_pos;
+		if(aper_diff == 0){
+			break;
+		}
+		if(aper_diff < 0){
+			aper_diff *= -1;
+			motor_state_machine(2, (0x340 * aper_diff));	//0x steps CW
+		}
+		motor_state_machine(3, (0x340 * aper_diff));	//0x steps CW	
+		current_pos = 5;	
+		break;
+		
+		case '6':
+		aper_diff = 6 - current_pos;
+		if(aper_diff == 0){
+			break;
+		}
+		if(aper_diff < 0){
+			aper_diff *= -1;
+			motor_state_machine(2, (0x340 * aper_diff));	//0x steps CW
+		}
+		motor_state_machine(3, (0x340 * aper_diff));	//0x steps CW	
+		current_pos = 6;	
+		break;
+		
+		default:
+		break;
+	}
 }
 
 void wait_motor(volatile int d){
