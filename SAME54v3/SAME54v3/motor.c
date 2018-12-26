@@ -21,6 +21,7 @@ void motor_hone(void);
 /*Global variables */
 volatile bool motor_on = false;
 volatile bool catch = false;
+volatile bool hone_done = false;
 volatile int state;
 volatile int steps;
 volatile current_pos;
@@ -82,6 +83,7 @@ void motor_hone(void){
 	current_pos = 1;
 	Honing_message_Ptr = Honing_done_message_Arr;
 	write_terminal(Honing_message_Ptr);
+	hone_done = true;
 }
 
 void motor_accel(void){
@@ -96,6 +98,7 @@ void motor_state_machine(int a, int b){
 	state = a;
 	steps = b;
 	motor_on = true;
+	bool decell_done = false;
 	
 	while(motor_on){
 		
@@ -112,7 +115,11 @@ void motor_state_machine(int a, int b){
 			/* CW State */
 			case 1:
 			porD->OUTSET.reg = EN;
-			while(count < (steps - 3)){
+			if(((steps - count) < 200) && !decell_done){
+				state = 4;
+				break;
+			}
+			if(count < (steps - 3)){
 				porD->OUTSET.reg = A;
 				porD->OUTCLR.reg = B;
 				wait_motor(i);
@@ -123,32 +130,50 @@ void motor_state_machine(int a, int b){
 				porD->OUTSET.reg = A;
 				wait_motor(i);
 				count += 4;
+				break;
 			}
-			if(count != steps){
+			else if(count != steps){
 				porD->OUTSET.reg = A;
 				porD->OUTCLR.reg = B;
 				wait_motor(i);
 				count++;
+				if(count == steps){
+					state = 0;	//go to brake state
+					count = 0;
+					break;
+				}
 			}
-			if(count != steps){
+			else if(count != steps){
 				porD->OUTCLR.reg = A;
 				wait_motor(i);
 				count++;
+				if(count == steps){
+					state = 0;	//go to brake state
+					count = 0;
+					break;
+				}
 			}
-			if(count != steps){
+			else if(count != steps){
 				porD->OUTSET.reg = B;
 				wait_motor(i);
 				count++;
+				if(count == steps){
+					state = 0;	//go to brake state
+					count = 0;
+					break;
+				}
 			}
-			if(count != steps){
+			else if(count != steps){
 				porD->OUTSET.reg = A;
 				wait_motor(i);
 				count++;
+				if(count == steps){
+					state = 0;	//go to brake state
+					count = 0;
+					break;
+				}
 			}
 			
-			state = 0;	//go to brake state
-			count = 0;
-			break;
 			
 			/* CCW State */
 			case 2:
@@ -192,25 +217,43 @@ void motor_state_machine(int a, int b){
 			
 			/* Acceleration CW State */
 			case 3:
-			while(i >= 10){
+			while(1){
 				
 				porD->OUTSET.reg = A;
 				porD->OUTCLR.reg = B;
 				wait_motor(i);
 				i--;
+				count++;
+				if(i == 10){
+					state = 1;
+					break;
+					}
 				porD->OUTCLR.reg = A;
 				wait_motor(i);
 				i--;
+				count++;
+				if(i == 10){
+					state = 1;
+					break;
+					}
 				porD->OUTSET.reg = B;
 				wait_motor(i);
 				i--;
+				count++;
+				if(i == 10){
+					state = 1;
+					break;
+					}
 				porD->OUTSET.reg = A;
 				wait_motor(i);
 				i--;
-				count += 4;
+				count++;
+				if(i == 10){
+					state = 1;
+					break;
+					}
 			}
-			state = 1;
-			break;
+			
 		
 		
 			
@@ -234,6 +277,7 @@ void motor_state_machine(int a, int b){
 				count += 4;
 			}
 			state = 1;
+			decell_done = true;
 			break;
 			
 			
@@ -260,6 +304,8 @@ void select_aper(char aper){
 		break;
 		
 		case '1':
+		if(!hone_done){motor_hone();}
+			
 		aper_diff = 1 - current_pos;
 		if(aper_diff == 0){
 			break;
@@ -272,65 +318,75 @@ void select_aper(char aper){
 		break;
 		
 		case '2':
+		if(!hone_done){motor_hone();}
+			
 		aper_diff = 2 - current_pos;
 		if(aper_diff == 0){
 			break;
 		}
 		if(aper_diff < 0){
 			aper_diff *= -1;
-			motor_state_machine(2, (0x340 * aper_diff));	//0x steps CW
+			motor_state_machine(2, (0x340 * aper_diff));	//0x steps CCW
 		}
 		motor_state_machine(3, (0x340 * aper_diff));	//0x steps CW	
 		current_pos = 2;	
 		break;
 		
 		case '3':
+		if(!hone_done){motor_hone();}
+			
 		aper_diff = 3 - current_pos;
 		if(aper_diff == 0){
 			break;
 		}
 		if(aper_diff < 0){
 			aper_diff *= -1;
-			motor_state_machine(2, (0x340 * aper_diff));	//0x steps CW
+			motor_state_machine(2, (0x340 * aper_diff));	//0x steps CCW
 		}
 		motor_state_machine(3, (0x340 * aper_diff));	//0x steps CW		
 		current_pos = 3;
 		break;
 		
 		case '4':
+		if(!hone_done){motor_hone();}
+			
 		aper_diff = 4 - current_pos;
 		if(aper_diff == 0){
 			break;
 		}
 		if(aper_diff < 0){
 			aper_diff *= -1;
-			motor_state_machine(2, (0x340 * aper_diff));	//0x steps CW
+			motor_state_machine(2, (0x340 * aper_diff));	//0x steps CCW
 		}
 		motor_state_machine(3, (0x340 * aper_diff));	//0x steps CW	
 		current_pos = 4;	
 		break;
 		
 		case '5':
+		if(!hone_done){motor_hone();}
+			
 		aper_diff = 5 - current_pos;
 		if(aper_diff == 0){
 			break;
 		}
 		if(aper_diff < 0){
 			aper_diff *= -1;
-			motor_state_machine(2, (0x340 * aper_diff));	//0x steps CW
+			motor_state_machine(2, (0x340 * aper_diff));	//0x steps CCW
 		}
 		motor_state_machine(3, (0x340 * aper_diff));	//0x steps CW	
 		current_pos = 5;	
 		break;
 		
 		case '6':
+		if(!hone_done){motor_hone();}
+			
 		aper_diff = 6 - current_pos;
 		if(aper_diff == 0){
 			break;
 		}
 		if(aper_diff < 0){
 			aper_diff *= -1;
-			motor_state_machine(2, (0x340 * aper_diff));	//0x steps CW
+			motor_state_machine(2, (0x340 * aper_diff));	//0x steps CCW
 		}
 		motor_state_machine(3, (0x340 * aper_diff));	//0x steps CW	
 		current_pos = 6;	
