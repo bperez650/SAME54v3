@@ -90,7 +90,7 @@ int main(void){
 	
 	/* Writes "start" to terminal upon reset */
 
-	volatile char start_array[] = "\nStart\n";
+	volatile char start_array[] = "Start\n";
 	volatile char *start_array_ptr;
 	start_array_ptr = start_array;
 	write_terminal(start_array_ptr);
